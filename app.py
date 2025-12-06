@@ -49,6 +49,29 @@ st.markdown(
     [data-testid="stSidebar"] {
         font-size: 13px;
     }
+
+    /* 玩家战绩页顶部指标：自定义两行布局，适配移动端 */
+    .player-metrics-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+    .player-metrics-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .player-metrics-label {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+    .player-metrics-value {
+        font-size: 18px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1097,28 +1120,36 @@ def page_player_stats():
             else 0.0
         )
 
-    # 使用自定义样式的“小号 metric”，让移动端更易阅读
-    def _render_small_metric(col, label: str, value: str):
-        col.markdown(
-            f"""
-            <div style="font-size:12px; color:#888; margin-bottom:2px;">{label}</div>
-            <div style="font-size:18px; font-weight:600;">{value}</div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # 使用自定义样式的“小号 metric”，让移动端更易阅读（使用 flex 布局，避免垂直堆叠）
+    def _render_small_metric_html(label: str, value: str) -> str:
+        return f"""
+        <div class="player-metrics-item">
+            <div class="player-metrics-label">{label}</div>
+            <div class="player-metrics-value">{value}</div>
+        </div>
+        """
 
-    # 第一行：核心 4 个指标
-    col1, col2, col3, col4 = st.columns(4)
-    _render_small_metric(col1, "总场次", f"{int(num_sessions)}")
-    _render_small_metric(col2, "总手数", f"{total_hands:.0f}")
-    _render_small_metric(col3, "总盈亏", f"{total_profit:.0f}")
-    _render_small_metric(col4, "场均盈亏", f"{avg_per_session:.1f}")
+    # 使用自定义的 HTML + flex 布局，让 7 个指标在移动端也尽量压缩在两行内
+    row1 = [
+        ("总场次", f"{int(num_sessions)}"),
+        ("总手数", f"{total_hands:.0f}"),
+        ("总盈亏", f"{total_profit:.0f}"),
+        ("场均盈亏", f"{avg_per_session:.1f}"),
+    ]
+    row2 = [
+        ("胜率", f"{(win_rate * 100):.1f}%"),
+        ("最大单场赢", f"{max_win:.0f}"),
+        ("最大单场输", f"{max_loss:.0f}"),
+    ]
 
-    # 第二行：补充 3 个指标
-    col5, col6, col7 = st.columns(3)
-    _render_small_metric(col5, "胜率", f"{(win_rate * 100):.1f}%")
-    _render_small_metric(col6, "最大单场赢", f"{max_win:.0f}")
-    _render_small_metric(col7, "最大单场输", f"{max_loss:.0f}")
+    html_rows = ""
+    for row in (row1, row2):
+        html_rows += '<div class="player-metrics-row">'
+        for label, value in row:
+            html_rows += _render_small_metric_html(label, value)
+        html_rows += "</div>"
+
+    st.markdown(html_rows, unsafe_allow_html=True)
 
     st.markdown("---")
 
