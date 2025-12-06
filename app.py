@@ -421,7 +421,7 @@ def page_overview():
     # 盈利 Top10
     st.subheader("💰 盈利 Top 10（按总盈亏排序）")
     top_profit = summary.sort_values("total_profit", ascending=False).head(10)
-    st.data_table(
+    st.dataframe(
         top_profit[["name", "num_sessions", "total_profit", "avg_profit"]],
         use_container_width=True,
     )
@@ -429,7 +429,7 @@ def page_overview():
     # 亏损 Top10
     st.subheader("📉 亏损 Top 10（按总盈亏从低到高排序）")
     top_loss = summary.sort_values("total_profit", ascending=True).head(10)
-    st.data_table(
+    st.dataframe(
         top_loss[["name", "num_sessions", "total_profit", "avg_profit"]],
         use_container_width=True,
     )
@@ -437,7 +437,7 @@ def page_overview():
     # 参与次数 Top10
     st.subheader("🧑‍🤝‍🧑 参与次数 Top 10（按场次）")
     top_sessions = summary.sort_values("num_sessions", ascending=False).head(10)
-    st.data_table(
+    st.dataframe(
         top_sessions[["name", "num_sessions", "total_profit", "avg_profit"]],
         use_container_width=True,
     )
@@ -445,7 +445,7 @@ def page_overview():
     # 买入手数 Top10（这里用 total_hands 代表总手数）
     st.subheader("🃏 买入手数 Top 10（按总手数）")
     top_hands = summary.sort_values("total_hands", ascending=False).head(10)
-    st.data_table(
+    st.dataframe(
         top_hands[["name", "num_sessions", "total_hands", "total_amount", "total_profit"]],
         use_container_width=True,
     )
@@ -459,7 +459,7 @@ def page_overview():
         # 将胜率显示为百分比
         df_wr = top_winrate[["name", "num_sessions", "win_sessions", "win_rate", "avg_profit"]].copy()
         df_wr["win_rate"] = (df_wr["win_rate"] * 100).round(1)
-        st.data_table(df_wr, use_container_width=True)
+        st.dataframe(df_wr, use_container_width=True)
 
     # 场均盈利 Top10（同样要求至少 3 场）
     st.subheader("📈 场均盈利 Top 10（至少 3 场）")
@@ -467,7 +467,7 @@ def page_overview():
         st.info("目前没有场次达到 3 场以上的玩家，无法计算场均盈利榜。")
     else:
         top_avg = summary_for_rate.sort_values("avg_profit", ascending=False).head(10)
-        st.data_table(
+        st.dataframe(
             top_avg[["name", "num_sessions", "avg_profit", "total_profit"]],
             use_container_width=True,
         )
@@ -500,7 +500,7 @@ def page_overview():
         ]
         show_cols = [c for c in show_cols if c in sessions_display.columns]
 
-        st.data_table(
+        st.dataframe(
             sessions_display[show_cols].head(10),
             use_container_width=True,
         )
@@ -549,7 +549,7 @@ def page_players():
     if players.empty:
         st.info("暂无玩家，请先新增。")
     else:
-        st.data_table(players, use_container_width=True)
+        st.dataframe(players, use_container_width=True)
 
 
 # === 页面：牌局列表 & 详情（基于 OCR 导入） ===
@@ -587,7 +587,7 @@ def page_sessions():
     ]
     show_cols = [c for c in show_cols if c in sessions_display.columns]
 
-    st.data_table(sessions_display[show_cols], use_container_width=True)
+    st.dataframe(sessions_display[show_cols], use_container_width=True)
 
     st.markdown("---")
 
@@ -656,7 +656,7 @@ def page_sessions():
         ]
         show_cols = [c for c in show_cols if c in sp_current.columns]
 
-        st.data_table(sp_current[show_cols], use_container_width=True)
+        st.dataframe(sp_current[show_cols], use_container_width=True)
 
 
 # === 页面：上传牌局（完整链路：上传→OCR→别名映射→导入→git 提交） ===
@@ -1019,7 +1019,7 @@ def page_player_stats():
     ]
     show_cols = [c for c in show_cols if c in merged_sorted.columns]
 
-    st.data_table(merged_sorted[show_cols], use_container_width=True)
+    st.dataframe(merged_sorted[show_cols], use_container_width=True)
 
     st.subheader("累计盈亏曲线")
     if not merged_sorted.empty and "session_date" in merged_sorted.columns:
