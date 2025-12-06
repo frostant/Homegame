@@ -1,0 +1,54 @@
+{
+  "per_hand_amount": 200,
+  "rows": [
+    {
+      "name": "lyt",
+      "hands": 2,
+      "amount": 340,
+      "profit": -60
+    },
+    {
+      "name": "帅",
+      "hands": 2,
+      "amount": 977,
+      "profit": 577
+    },
+    {
+      "name": "edz",
+      "hands": 4,
+      "amount": 156,
+      "profit": -644
+    },
+    {
+      "name": "qiuciu",
+      "hands": 2,
+      "amount": 164,
+      "profit": -236
+    },
+    {
+      "name": "april",
+      "hands": 1,
+      "amount": 95,
+      "profit": -105
+    },
+    {
+      "name": "jin",
+      "hands": 1,
+      "amount": 735,
+      "profit": 535
+    },
+    {
+      "name": "馀鱼",
+      "hands": 1,
+      "amount": 134,
+      "profit": -66
+    }
+  ],
+  "validation": {
+    "total_profit": 1,
+    "num_rows": 7,
+    "num_valid_profit_rows": 7,
+    "is_balanced": false,
+    "tolerance": 0
+  }
+}
