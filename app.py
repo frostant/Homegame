@@ -422,6 +422,35 @@ if "players" not in st.session_state:
     print("[INIT] 首次加载数据并写入 session_state 完成")
 
 
+# === 排行榜展示辅助函数 ===
+def format_signed_int(v):
+    """将数字格式化为带符号、千位分隔的整数字符串，例如 +1,234 / -500。"""
+    try:
+        v = float(v)
+    except Exception:
+        return ""
+    return f"{v:+,.0f}"
+
+
+def style_profit_color(val):
+    """用于在 DataFrame 中给盈亏列上色：盈利绿色，亏损红色。
+
+    兼容已经格式化的字符串，例如 "+4,142" / "-532" / "0"。
+    """
+    try:
+        # 将值转换为字符串，去掉千位分隔符，再尝试转为 float
+        s = str(val).replace(",", "").strip()
+        v = float(s)
+    except Exception:
+        return "color:#999999;"
+
+    if v > 0:
+        return "color:#3FB950;"  # 绿色
+    if v < 0:
+        return "color:#F85149;"  # 红色
+    return "color:#999999;"
+
+
 # === 页面：排行榜 ===
 
 def page_overview():
@@ -434,119 +463,158 @@ def page_overview():
     # 汇总玩家维度战绩
     summary = compute_player_summary(players, sessions, session_players)
 
-    # 顶部整体指标
+    # 顶部整体指标卡片
     total_players = len(summary) if not summary.empty else len(players)
     total_sessions = len(sessions)
-    total_profit_all = (
-        summary["total_profit"].sum() if not summary.empty else (
+    if not summary.empty:
+        total_profit_all = summary["total_profit"].sum()
+        total_hands_all = summary["total_hands"].sum()
+    else:
+        total_profit_all = (
             session_players["profit"].sum() if not session_players.empty else 0
         )
-    )
+        total_hands_all = (
+            session_players["hands"].sum() if not session_players.empty else 0
+        )
+
+    # 找出当前总盈利最高的玩家（如果存在）
+    top_player_name = "-"
+    top_player_profit = 0
+    if not summary.empty:
+        top_row = summary.sort_values("total_profit", ascending=False).iloc[0]
+        top_player_name = str(top_row.get("name", "-"))
+        top_player_profit = top_row.get("total_profit", 0)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("玩家数量", total_players)
-    col2.metric("牌局场次", total_sessions)
-    col3.metric("所有玩家盈亏总和", f"{total_profit_all:.0f}")
+
+    col1.markdown(
+        f"""
+        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
+                    border:1px solid #333;">
+          <div style="font-size:12px;color:#aaaaaa;">累计玩家数</div>
+          <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_players}</div>
+          
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col2.markdown(
+        f"""
+        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
+                    border:1px solid #333;">
+          <div style="font-size:12px;color:#aaaaaa;">累计牌局场次</div>
+          <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_sessions}</div>
+          
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col3.markdown(
+        f"""
+        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
+                    border:1px solid #333;">
+          <div style="font-size:12px;color:#aaaaaa;">当前最大赢家</div>
+          <div style="font-size:16px;font-weight:600;margin-top:4px;">{top_player_name}</div>
+          <div style="font-size:13px;font-weight:700;margin-top:2px;">{format_signed_int(top_player_profit)} 分</div>
+          
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown("---")
 
     if summary.empty:
-        st.info("暂无战绩数据，请先通过脚本或上传页面导入 OCR 结果。")
+        st.markdown(
+            """
+            #### 还没有任何战绩数据 💤  
+            可以先去左侧「➕ 添加牌局」上传一场牌局截图，我们会自动识别并记录。
+            """
+        )
         return
 
     # 为了展示更合理的排行榜，可以对部分榜单加上最小场次门槛
     summary_for_rate = summary.copy()
     summary_for_rate = summary_for_rate[summary_for_rate["num_sessions"] >= 3]
 
-    # 盈利 Top10
-    st.subheader("💰 盈利 Top 10（按总盈亏排序）")
-    top_profit = summary.sort_values("total_profit", ascending=False).head(10)
-    st.dataframe(
-        top_profit[["name", "num_sessions", "total_profit", "avg_profit"]],
-        use_container_width=True,
-    )
-
-    # 亏损 Top10
-    st.subheader("📉 亏损 Top 10（按总盈亏从低到高排序）")
-    top_loss = summary.sort_values("total_profit", ascending=True).head(10)
-    st.dataframe(
-        top_loss[["name", "num_sessions", "total_profit", "avg_profit"]],
-        use_container_width=True,
-    )
-
-    # 参与次数 Top10
-    st.subheader("🧑‍🤝‍🧑 参与次数 Top 10（按场次）")
-    top_sessions = summary.sort_values("num_sessions", ascending=False).head(10)
-    st.dataframe(
-        top_sessions[["name", "num_sessions", "total_profit", "avg_profit"]],
-        use_container_width=True,
-    )
-
-    # 买入手数 Top10（这里用 total_hands 代表总手数）
-    st.subheader("🃏 买入手数 Top 10（按总手数）")
-    top_hands = summary.sort_values("total_hands", ascending=False).head(10)
-    st.dataframe(
-        top_hands[["name", "num_sessions", "total_hands", "total_amount", "total_profit"]],
-        use_container_width=True,
-    )
-
-    # 场次胜率 Top10（要求至少 3 场，避免极端值）
-    st.subheader("✅ 场次胜率 Top 10（至少 3 场）")
-    if summary_for_rate.empty:
-        st.info("目前没有场次达到 3 场以上的玩家，无法计算胜率榜。")
-    else:
-        top_winrate = summary_for_rate.sort_values("win_rate", ascending=False).head(10)
-        # 将胜率显示为百分比
-        df_wr = top_winrate[["name", "num_sessions", "win_sessions", "win_rate", "avg_profit"]].copy()
-        df_wr["win_rate"] = (df_wr["win_rate"] * 100).round(1)
-        st.dataframe(df_wr, use_container_width=True)
-
-    # 场均盈利 Top10（同样要求至少 3 场）
-    st.subheader("📈 场均盈利 Top 10（至少 3 场）")
-    if summary_for_rate.empty:
-        st.info("目前没有场次达到 3 场以上的玩家，无法计算场均盈利榜。")
-    else:
-        top_avg = summary_for_rate.sort_values("avg_profit", ascending=False).head(10)
-        st.dataframe(
-            top_avg[["name", "num_sessions", "avg_profit", "total_profit"]],
-            use_container_width=True,
-        )
-
-    st.markdown("---")
-    st.subheader("📋 最近 10 场牌局概览")
-
-    if not sessions.empty:
-        sessions_display = sessions.copy()
-        if "session_date" in sessions_display.columns:
-            sessions_display["session_date_parsed"] = pd.to_datetime(
-                sessions_display["session_date"], errors="coerce"
-            )
-            sessions_display = sessions_display.sort_values(
-                ["session_date_parsed", "session_id"], ascending=[False, False]
-            )
-        else:
-            sessions_display = sessions_display.sort_values(
-                "session_id", ascending=False
-            )
-
-        show_cols = [
-            "session_id",
-            "session_date",
-            "session_name",
-            "per_hand_amount",
-            "total_profit",
-            "is_balanced",
-            "raw_file",
+    # 使用标签页将所有排行榜集中到同一目录栏中
+    tab_profit, tab_loss, tab_sessions, tab_hands, tab_winrate, tab_avg = st.tabs(
+        [
+            "💰 盈利 Top 10",
+            "📉 亏损 Top 10",
+            "🧑‍🤝‍🧑 参与次数 Top 10",
+            "🃏 买入手数 Top 10",
+            "✅ 场次胜率 Top 10",
+            "📈 场均盈利 Top 10",
         ]
-        show_cols = [c for c in show_cols if c in sessions_display.columns]
+    )
 
-        st.dataframe(
-            sessions_display[show_cols].head(10),
-            use_container_width=True,
+    with tab_profit:
+        st.subheader("💰 盈利 Top 10 ")
+        top_profit = summary.sort_values("total_profit", ascending=False).head(10)
+        df_top_profit = top_profit[["name", "total_profit"]].copy()
+        df_top_profit["total_profit"] = df_top_profit["total_profit"].apply(format_signed_int)
+        df_top_profit = df_top_profit.reset_index(drop=True)
+        # 先做格式化和上色, 再重命名列
+        df_top_profit = df_top_profit.rename( columns={ "name": "玩家", "total_profit": "总盈利", } )
+        styled_top_profit = df_top_profit.style.applymap(
+            style_profit_color, subset=["总盈利"]
         )
-    else:
-        st.write("暂无牌局。")
+        st.dataframe(styled_top_profit, use_container_width=True)
 
+    with tab_loss:
+        st.subheader("📉 亏损 Top 10 ")
+        top_loss = summary.sort_values("total_profit", ascending=True).head(10)
+        df_top_loss = top_loss[["name", "total_profit"]].copy()
+        df_top_loss["total_profit"] = df_top_loss["total_profit"].apply(format_signed_int)
+        df_top_loss = df_top_loss.reset_index(drop=True)
+        df_top_loss = df_top_loss.rename( columns={ "name": "玩家", "total_profit": "总亏损", } )
+        styled_top_loss = df_top_loss.style.applymap(
+            style_profit_color, subset=["总亏损"]
+        )
+        st.dataframe(styled_top_loss, use_container_width=True)
+
+    with tab_sessions:
+        st.subheader("🧑‍🤝‍🧑 参与次数 Top 10 ")
+        top_sessions = summary.sort_values("num_sessions", ascending=False).head(10)
+        df_top_sessions = top_sessions[["name", "num_sessions"]].copy()
+        df_top_sessions = df_top_sessions.reset_index(drop=True)
+        df_top_sessions = df_top_sessions.rename( columns={ "name": "玩家", "num_sessions": "参与场次", } )
+        st.dataframe(df_top_sessions, use_container_width=True)
+
+    with tab_hands:
+        st.subheader("🃏 买入手数 Top 10 ")
+        top_hands = summary.sort_values("total_hands", ascending=False).head(10)
+        df_top_hands = top_hands[["name", "total_hands"]].copy()
+        df_top_hands = df_top_hands.rename( columns={ "name": "玩家", "total_hands": "买入手数", } )
+        st.dataframe(df_top_hands, use_container_width=True)
+
+    with tab_winrate:
+        st.subheader("✅ 场次胜率 Top 10（至少 3 场）")
+        if summary_for_rate.empty:
+            st.info("目前没有场次达到 3 场以上的玩家，无法计算胜率榜。")
+        else:
+            top_winrate = summary_for_rate.sort_values("win_rate", ascending=False).head(10)
+            df_wr = top_winrate[["name", "num_sessions", "win_rate"]].copy()
+            df_wr["win_rate"] = (df_wr["win_rate"] * 100).round(1)
+            df_wr = df_wr.rename( columns={ "name": "玩家", "num_sessions": "场次", "win_rate": "胜率",} )
+            st.dataframe(df_wr, use_container_width=True)
+
+    with tab_avg:
+        st.subheader("📈 场均盈利 Top 10（至少 3 场）")
+        if summary_for_rate.empty:
+            st.info("目前没有场次达到 3 场以上的玩家，无法计算场均盈利榜。")
+        else:
+            top_avg = summary_for_rate.sort_values("avg_profit", ascending=False).head(10)
+            df_top_avg = top_avg[["name", "num_sessions", "avg_profit"]].copy()
+            df_top_avg["avg_profit"] = df_top_avg["avg_profit"].apply(format_signed_int)
+            df_top_avg = df_top_avg.rename( columns={ "name": "玩家", "num_sessions": "场次", "avg_profit": "场均盈利",} )
+            styled_top_avg = df_top_avg.style.applymap(
+                style_profit_color, subset=["场均盈利"]
+            )
+            st.dataframe(styled_top_avg, use_container_width=True)
 
 # === 页面：玩家管理 ===
 
