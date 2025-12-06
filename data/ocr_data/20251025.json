@@ -1,0 +1,60 @@
+{
+  "per_hand_amount": 300,
+  "rows": [
+    {
+      "name": "kk",
+      "hands": 4,
+      "amount": 217,
+      "profit": -983
+    },
+    {
+      "name": "shi",
+      "hands": 6,
+      "amount": 1450,
+      "profit": -350
+    },
+    {
+      "name": "ys",
+      "hands": 2,
+      "amount": 1427,
+      "profit": 827
+    },
+    {
+      "name": "yjrx",
+      "hands": 1,
+      "amount": 0,
+      "profit": -300
+    },
+    {
+      "name": "hmg",
+      "hands": 3,
+      "amount": 405,
+      "profit": -495
+    },
+    {
+      "name": "teng",
+      "hands": 2,
+      "amount": 883,
+      "profit": 283
+    },
+    {
+      "name": "qiubiu",
+      "hands": 1,
+      "amount": 481,
+      "profit": 181
+    },
+    {
+      "name": "yuki",
+      "hands": 4,
+      "amount": 2037,
+      "profit": 837
+    }
+  ],
+  "validation": {
+    "total_profit": 0,
+    "num_rows": 8,
+    "num_valid_profit_rows": 8,
+    "is_balanced": true,
+    "tolerance": 0
+  }
+}

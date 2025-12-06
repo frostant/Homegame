@@ -1,0 +1,60 @@
+{
+  "per_hand_amount": 200,
+  "rows": [
+    {
+      "name": "Yuki",
+      "hands": 2,
+      "amount": 0,
+      "profit": -400
+    },
+    {
+      "name": "石",
+      "hands": 4,
+      "amount": 1487,
+      "profit": 687
+    },
+    {
+      "name": "帅",
+      "hands": 6,
+      "amount": 1826,
+      "profit": 626
+    },
+    {
+      "name": "睿",
+      "hands": 7,
+      "amount": 230,
+      "profit": -1170
+    },
+    {
+      "name": "黄毛哥",
+      "hands": 4,
+      "amount": 827,
+      "profit": 27
+    },
+    {
+      "name": "Kent",
+      "hands": 5,
+      "amount": 610,
+      "profit": -390
+    },
+    {
+      "name": "雅",
+      "hands": 1,
+      "amount": 389,
+      "profit": 189
+    },
+    {
+      "name": "腾哥",
+      "hands": 4,
+      "amount": 1219,
+      "profit": 419
+    }
+  ],
+  "validation": {
+    "total_profit": -12,
+    "num_rows": 8,
+    "num_valid_profit_rows": 8,
+    "is_balanced": false,
+    "tolerance": 0
+  }
+}

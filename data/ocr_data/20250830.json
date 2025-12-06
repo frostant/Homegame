@@ -1,0 +1,78 @@
+{
+  "per_hand_amount": 1000,
+  "rows": [
+    {
+      "name": "edz",
+      "hands": 6,
+      "amount": 1780,
+      "profit": -4220
+    },
+    {
+      "name": "石",
+      "hands": 6,
+      "amount": 0,
+      "profit": -6000
+    },
+    {
+      "name": "鲶鱼",
+      "hands": 2,
+      "amount": 0,
+      "profit": -2000
+    },
+    {
+      "name": "帅哥",
+      "hands": 1,
+      "amount": 4650,
+      "profit": 3650
+    },
+    {
+      "name": "飞飞",
+      "hands": 1,
+      "amount": 625,
+      "profit": -375
+    },
+    {
+      "name": "小雪",
+      "hands": 3,
+      "amount": 8925,
+      "profit": 5925
+    },
+    {
+      "name": "hanna",
+      "hands": 1,
+      "amount": 330,
+      "profit": -670
+    },
+    {
+      "name": "kent",
+      "hands": 3,
+      "amount": 5495,
+      "profit": 2495
+    },
+    {
+      "name": "yaxu",
+      "hands": 2,
+      "amount": 0,
+      "profit": -2000
+    },
+    {
+      "name": "april",
+      "hands": 1,
+      "amount": 1125,
+      "profit": 125
+    },
+    {
+      "name": "lyt",
+      "hands": 1,
+      "amount": 4070,
+      "profit": 3070
+    }
+  ],
+  "validation": {
+    "total_profit": 0,
+    "num_rows": 11,
+    "num_valid_profit_rows": 11,
+    "is_balanced": true,
+    "tolerance": 0
+  }
+}
