@@ -13,6 +13,46 @@ st.set_page_config(
     initial_sidebar_state="collapsed",  # 移动端默认收起侧边栏，主内容更清晰
 )
 
+# 全局字体缩小一点，提升移动端适配效果
+st.markdown(
+    """
+    <style>
+    html, body, [data-testid="stAppViewContainer"], .block-container {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+    h2 {
+        font-size: 1.3rem;
+    }
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    /* metric 组件的文字稍微缩小一点 */
+    [data-testid="stMetricValue"] {
+        font-size: 1.1rem;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.7rem;
+    }
+
+    /* 表格 / 数据框字体缩小 */
+    .stDataFrame, .stTable {
+        font-size: 12px;
+    }
+
+    /* 侧边栏字体也略微缩小 */
+    [data-testid="stSidebar"] {
+        font-size: 13px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # === 路径配置（与项目 / OCR 脚本保持一致） ===
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -988,16 +1028,26 @@ def page_player_stats():
             else 0.0
         )
 
+    # 使用自定义样式的“小号 metric”，让移动端更易阅读
+    def _render_small_metric(col, label: str, value: str):
+        col.markdown(
+            f"""
+            <div style="font-size:12px; color:#888; margin-bottom:2px;">{label}</div>
+            <div style="font-size:18px; font-weight:600;">{value}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("总场次", int(num_sessions))
-    col2.metric("总手数", f"{total_hands:.0f}")
-    col3.metric("总盈亏", f"{total_profit:.0f}")
-    col4.metric("场均盈亏", f"{avg_per_session:.1f}")
-    col5.metric("胜率", f"{(win_rate * 100):.1f}%")
+    _render_small_metric(col1, "总场次", f"{int(num_sessions)}")
+    _render_small_metric(col2, "总手数", f"{total_hands:.0f}")
+    _render_small_metric(col3, "总盈亏", f"{total_profit:.0f}")
+    _render_small_metric(col4, "场均盈亏", f"{avg_per_session:.1f}")
+    _render_small_metric(col5, "胜率", f"{(win_rate * 100):.1f}%")
 
     col6, col7 = st.columns(2)
-    col6.metric("最大单场赢", f"{max_win:.0f}")
-    col7.metric("最大单场输", f"{max_loss:.0f}")
+    _render_small_metric(col6, "最大单场赢", f"{max_win:.0f}")
+    _render_small_metric(col7, "最大单场输", f"{max_loss:.0f}")
 
     st.markdown("---")
 
