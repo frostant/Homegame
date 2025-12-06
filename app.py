@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import subprocess
 import sys
+import altair as alt
 
 st.set_page_config(
     page_title="Nova88 HomeGame 战绩记录",
@@ -489,8 +490,8 @@ def page_overview():
 
     col1.markdown(
         f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
-                    border:1px solid #333;">
+        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
+                    border:1px solid #ddd;">
           <div style="font-size:12px;color:#aaaaaa;">累计玩家数</div>
           <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_players}</div>
           
@@ -501,8 +502,8 @@ def page_overview():
 
     col2.markdown(
         f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
-                    border:1px solid #333;">
+        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
+                    border:1px solid #ddd;">
           <div style="font-size:12px;color:#aaaaaa;">累计牌局场次</div>
           <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_sessions}</div>
           
@@ -513,8 +514,8 @@ def page_overview():
 
     col3.markdown(
         f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#1e1e1e;
-                    border:1px solid #333;">
+        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
+                    border:1px solid #ddd;">
           <div style="font-size:12px;color:#aaaaaa;">当前最大赢家</div>
           <div style="font-size:16px;font-weight:600;margin-top:4px;">{top_player_name}</div>
           <div style="font-size:13px;font-weight:700;margin-top:2px;">{format_signed_int(top_player_profit)} 分</div>
@@ -1106,27 +1107,55 @@ def page_player_stats():
             unsafe_allow_html=True,
         )
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # 第一行：核心 4 个指标
+    col1, col2, col3, col4 = st.columns(4)
     _render_small_metric(col1, "总场次", f"{int(num_sessions)}")
     _render_small_metric(col2, "总手数", f"{total_hands:.0f}")
     _render_small_metric(col3, "总盈亏", f"{total_profit:.0f}")
     _render_small_metric(col4, "场均盈亏", f"{avg_per_session:.1f}")
-    _render_small_metric(col5, "胜率", f"{(win_rate * 100):.1f}%")
 
-    col6, col7 = st.columns(2)
+    # 第二行：补充 3 个指标
+    col5, col6, col7 = st.columns(3)
+    _render_small_metric(col5, "胜率", f"{(win_rate * 100):.1f}%")
     _render_small_metric(col6, "最大单场赢", f"{max_win:.0f}")
     _render_small_metric(col7, "最大单场输", f"{max_loss:.0f}")
 
     st.markdown("---")
 
-    st.subheader("每场战绩列表")
+    # 先展示累计盈亏曲线，再展示每场战绩列表
+    st.subheader("累计盈亏曲线")
+
     merged_sorted = merged.copy()
     if "session_date" in merged_sorted.columns:
         merged_sorted["session_date_parsed"] = pd.to_datetime(
             merged_sorted["session_date"], errors="coerce"
         )
         merged_sorted = merged_sorted.sort_values("session_date_parsed")
+        merged_sorted["cum_profit"] = merged_sorted["profit"].cumsum()
 
+        chart_df = merged_sorted[["session_date_parsed", "cum_profit"]].dropna()
+        if not chart_df.empty:
+            base = alt.Chart(chart_df).encode(
+                x=alt.X("session_date_parsed:T", title="日期"),
+                y=alt.Y("cum_profit:Q", title="累计盈亏"),
+                tooltip=[
+                    alt.Tooltip("session_date_parsed:T", title="日期"),
+                    alt.Tooltip("cum_profit:Q", title="累计盈亏", format=".0f"),
+                ],
+            )
+            line = base.mark_line(point=True)
+            area = base.mark_area(opacity=0.15)
+            chart = (area + line).properties(height=220)
+            st.altair_chart(chart, use_container_width=True)
+        else:
+            st.info("当前玩家暂无可绘制的盈亏曲线数据。")
+    else:
+        st.info("当前数据缺少日期字段，无法绘制盈亏曲线。")
+
+    st.markdown("---")
+
+    st.subheader("每场战绩列表")
+    # 这里复用上面的 merged_sorted（已经按日期排序，增加了累计盈亏列）
     show_cols = [
         "session_date",
         "session_name",
@@ -1138,18 +1167,6 @@ def page_player_stats():
     show_cols = [c for c in show_cols if c in merged_sorted.columns]
 
     st.dataframe(merged_sorted[show_cols], use_container_width=True)
-
-    st.subheader("累计盈亏曲线")
-    if not merged_sorted.empty and "session_date" in merged_sorted.columns:
-        merged_sorted["session_date_parsed"] = pd.to_datetime(
-            merged_sorted["session_date"], errors="coerce"
-        )
-        merged_sorted = merged_sorted.sort_values("session_date_parsed")
-        merged_sorted["cum_profit"] = merged_sorted["profit"].cumsum()
-        chart_data = merged_sorted[["session_date_parsed", "cum_profit"]].set_index(
-            "session_date_parsed"
-        )
-        st.line_chart(chart_data)
 
 
 def render_sidebar_feedback():
@@ -1197,6 +1214,27 @@ def render_sidebar_feedback():
             st.caption("（在 data/wechat_pay_qr.png 放一张微信收款码，这里会自动显示）")
 
 
+
+# === 自动折叠侧边栏工具 ===
+def auto_collapse_sidebar():
+    """在页面渲染后自动收起侧边栏（适配中英文标签）。"""
+    st.markdown(
+        """
+        <script>
+        // 尝试找到侧边栏折叠/展开按钮并点击一次
+        const parentDoc = window.parent.document;
+        const btn =
+            parentDoc.querySelector('button[aria-label="隐藏侧边栏"]') ||
+            parentDoc.querySelector('button[aria-label="Collapse sidebar"]') ||
+            parentDoc.querySelector('[data-testid="collapsedControl"]');
+        if (btn) {
+            btn.click();
+        }
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # === 主入口 ===
 
 def main():
@@ -1219,6 +1257,9 @@ def main():
 
     # 所有页面共用的侧边栏反馈 & 打赏区域
     render_sidebar_feedback()
+
+    # 页面渲染完成后，自动收起侧边栏（用户选择完导航后会重新折叠）
+    auto_collapse_sidebar()
 
 
 if __name__ == "__main__":
