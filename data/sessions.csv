@@ -10,4 +10,4 @@ session_date,session_name,total_profit,per_hand_amount,session_id,is_balanced,ra
 2025-11-15,20251115,0,200,9,True,20251115.json
 2025-11-28,20251128,0,200,10,True,20251128.json
 2025-11-29,20251129,0,200,11,True,20251129.json
-2025-12-06,20251206_2,1.0,200,12,False,20251206_2.json
+2025-12-06,20251206,1.0,200,12,False,20251206.json

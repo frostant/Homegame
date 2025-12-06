@@ -1,5 +1,6 @@
 import csv
 import json
+import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
 
@@ -325,7 +326,7 @@ def save_session_players(records: List[Dict[str, Any]]) -> None:
 
 # ===== 主流程 =====
 
-def main():
+def batch_import_all():
     print("=== 从 OCR JSON 导入牌局到 sessions.csv & session_players.csv ===\n")
 
     players = load_players()
@@ -435,6 +436,137 @@ def main():
     save_session_players(session_players)
 
     print(f"\n🎉 导入完成：新增 {new_sessions_count} 场牌局，新增 {new_records_count} 条玩家记录。")
+
+
+def import_single_json(json_path: Path) -> None:
+    """增量导入单个 OCR JSON 牌局到 sessions.csv & session_players.csv。
+
+    将：
+    - 从 players.csv / alias_map.csv / sessions.csv / session_players.csv 读取当前状态
+    - 仅处理传入的 json_path 对应的牌局
+    - 追加写入一场新的牌局及其所有玩家记录
+    """
+    print("=== 导入单个 OCR JSON 牌局 ===\n")
+
+    if not json_path.exists():
+        print(f"❌ 指定的 JSON 文件不存在：{json_path}")
+        return
+
+    raw_file_name = json_path.name
+
+    # 读取当前数据
+    players = load_players()
+    alias_to_pid = load_alias_map()
+    sessions, imported_files, max_session_id = load_existing_sessions()
+    session_players = load_existing_session_players()
+
+    # 为了查 player 别名：player_id -> canonical name
+    player_id_to_name = {
+        pid: p.get("name", "")
+        for pid, p in players.items()
+    }
+
+    if raw_file_name in imported_files:
+        print(f"⏭ 该牌局已导入过，跳过：{raw_file_name}")
+        return
+
+    print(f"➡️ 处理单个牌局文件：{raw_file_name}")
+
+    try:
+        with json_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"  ⚠️ 读取 JSON 失败，跳过：{e}")
+        return
+
+    rows = data.get("rows") or []
+    validation = data.get("validation") or {}
+
+    if not rows:
+        print(f"  ⚠️ JSON 中 rows 为空，未导入任何记录。")
+        return
+
+    per_hand_amount_raw = data.get("per_hand_amount")
+    per_hand_amount = normalize_per_hand_amount(per_hand_amount_raw, raw_file_name, rows)
+
+    total_profit = validation.get("total_profit")
+    is_balanced = validation.get("is_balanced")
+
+    # 新建 session_id
+    max_session_id += 1
+    session_id = max_session_id
+
+    # 从文件名推 session_date / session_name
+    stem = json_path.stem  # 例如 20250802 或 20250920_2
+    session_date = parse_session_date_from_stem(stem)
+    session_name = stem
+
+    sessions.append({
+        "session_id": str(session_id),
+        "session_date": session_date,
+        "session_name": session_name,
+        "per_hand_amount": per_hand_amount,
+        "total_profit": total_profit,
+        "is_balanced": is_balanced,
+        "raw_file": raw_file_name,
+    })
+    imported_files.add(raw_file_name)
+
+    new_records_count = 0
+    for r in rows:
+        alias = str(r.get("name", "")).strip()
+        if not alias:
+            continue
+
+        pid = resolve_player_id_from_alias(alias, alias_to_pid)
+        pid_str = str(pid) if pid is not None else ""
+
+        canonical_name = alias
+        if pid is not None:
+            canonical_name = player_id_to_name.get(pid, alias)
+
+        hands = r.get("hands")
+        amount = r.get("amount")
+        profit = r.get("profit")
+
+        record = {
+            "session_id": str(session_id),
+            "player_id": pid_str,
+            "alias": alias,
+            "name": canonical_name,
+            "hands": hands,
+            "amount": amount,
+            "profit": profit,
+        }
+        session_players.append(record)
+        new_records_count += 1
+
+    # 写回 CSV
+    save_sessions(sessions)
+    save_session_players(session_players)
+
+    print(f"  ✅ 已导入该牌局：session_id={session_id}，共 {new_records_count} 条玩家记录。")
+
+
+def main():
+    """命令行入口：
+
+    - 无参数：批量导入 OCR_DIR 下所有未导入的 JSON；
+    - --json path/to/file.json：仅增量导入指定的单个 JSON 牌局。
+    """
+    parser = argparse.ArgumentParser(description="从 OCR JSON 导入德扑牌局数据")
+    parser.add_argument(
+        "--json",
+        type=str,
+        help="仅导入指定的 OCR JSON 文件（路径）",
+    )
+    args = parser.parse_args()
+
+    if args.json:
+        json_path = Path(args.json)
+        import_single_json(json_path)
+    else:
+        batch_import_all()
 
 
 if __name__ == "__main__":

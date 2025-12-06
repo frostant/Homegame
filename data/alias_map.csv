@@ -1,5 +1,5 @@
 alias,player_id,is_primary
-Allison,1,0
+lyt,1,0
 Hana,2,0
 Jin,3,0
 Kent,4,0
@@ -17,11 +17,11 @@ huang,10,0
 jin,3,0
 kent,4,0
 kk,4,0
-lyt,12,0
-qiubiu,13,0
+Allison,12,0
+qiuqiu,13,0
 shi,3,0
 song,14,0
-teng,12,0
+teng,1,0
 uu,15,0
 vera,16,0
 vv,17,0
@@ -30,7 +30,7 @@ yaxu,19,0
 yj,16,0
 yjrx,16,0
 ys,23,0
-yt,12,0
+yt,1,0
 yuki,6,0
 yun,21,0
 于江,16,0
@@ -44,7 +44,7 @@ yun,21,0
 睿,25,0
 石,3,0
 老乡,2,0
-腾哥,12,0
+腾哥,1,0
 薛,26,0
 豆豆,27,0
 雅,19,0
