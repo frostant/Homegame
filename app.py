@@ -72,6 +72,48 @@ st.markdown(
         font-weight: 600;
         white-space: nowrap;
     }
+
+    /* 排行榜顶部三张卡片：在移动端横向自适应排列 */
+    .overview-metrics-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0 4px 0;
+    }
+    .overview-metrics-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .overview-metrics-card {
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: #f5f5f9;
+        border: 1px solid #ddd;
+    }
+    .overview-metrics-label {
+        font-size: 12px;
+        color: #aaaaaa;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+    .overview-metrics-value-main {
+        font-size: 22px;
+        font-weight: 700;
+        margin-top: 4px;
+        white-space: nowrap;
+    }
+    .overview-metrics-value-sub {
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+    /* 在窄屏幕下，尽量两张卡片一行，第三张自动换行 */
+    @media (max-width: 600px) {
+        .overview-metrics-item {
+            flex: 1 1 calc(50% - 8px);
+        }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -509,44 +551,31 @@ def page_overview():
         top_player_name = str(top_row.get("name", "-"))
         top_player_profit = top_row.get("total_profit", 0)
 
-    col1, col2, col3 = st.columns(3)
-
-    col1.markdown(
-        f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
-                    border:1px solid #ddd;">
-          <div style="font-size:12px;color:#aaaaaa;">累计玩家数</div>
-          <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_players}</div>
-          
+    # 顶部三张卡片：使用自定义 flex 布局，适配移动端
+    overview_html = f"""
+    <div class="overview-metrics-row">
+      <div class="overview-metrics-item">
+        <div class="overview-metrics-card">
+          <div class="overview-metrics-label">累计玩家数</div>
+          <div class="overview-metrics-value-main">{total_players}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col2.markdown(
-        f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
-                    border:1px solid #ddd;">
-          <div style="font-size:12px;color:#aaaaaa;">累计牌局场次</div>
-          <div style="font-size:22px;font-weight:700;margin-top:4px;">{total_sessions}</div>
-          
+      </div>
+      <div class="overview-metrics-item">
+        <div class="overview-metrics-card">
+          <div class="overview-metrics-label">累计牌局场次</div>
+          <div class="overview-metrics-value-main">{total_sessions}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col3.markdown(
-        f"""
-        <div style="padding:10px 14px;border-radius:10px;background:#f5f5f9;
-                    border:1px solid #ddd;">
-          <div style="font-size:12px;color:#aaaaaa;">当前最大赢家</div>
-          <div style="font-size:16px;font-weight:600;margin-top:4px;">{top_player_name}</div>
-          <div style="font-size:13px;font-weight:700;margin-top:2px;">{format_signed_int(top_player_profit)} 分</div>
-          
+      </div>
+      <div class="overview-metrics-item">
+        <div class="overview-metrics-card">
+          <div class="overview-metrics-label">当前最大赢家</div>
+          <div class="overview-metrics-value-main">{top_player_name}</div>
+          <div class="overview-metrics-value-sub">{format_signed_int(top_player_profit)} 分</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+      </div>
+    </div>
+    """
+    st.markdown(overview_html, unsafe_allow_html=True)
 
     st.markdown("---")
 
