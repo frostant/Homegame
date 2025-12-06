@@ -1,6 +1,5 @@
 
 # Framework 
-
 poker_tracker/
 ├── app.py                # Streamlit 主程式
 ├── requirements.txt      # 依賴包
