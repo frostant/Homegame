@@ -1151,12 +1151,13 @@ def page_player_stats():
 
     # 使用自定义样式的“小号 metric”，让移动端更易阅读（使用 flex 布局，避免垂直堆叠）
     def _render_small_metric_html(label: str, value: str) -> str:
-        return f"""
-        <div class="player-metrics-item">
-            <div class="player-metrics-label">{label}</div>
-            <div class="player-metrics-value">{value}</div>
-        </div>
-        """
+        # 注意：不要在行首留下 4 个以上空格，否则在 Markdown 中会被当成代码块而直接显示源码
+        return (
+            '<div class="player-metrics-item">'
+            f'<div class="player-metrics-label">{label}</div>'
+            f'<div class="player-metrics-value">{value}</div>'
+            "</div>"
+        )
 
     # 使用自定义的 HTML + flex 布局，让 7 个指标在移动端也尽量压缩在两行内
     row1 = [
